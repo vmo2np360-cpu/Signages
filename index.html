@@ -2,9 +2,19 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signage 記錄系統 (含數量)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Signage 記錄系統 (含數量) 手機版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 讓按鈕和輸入框更容易點擊 */
+        button, input[type="file"]::file-selector-button {
+            cursor: pointer;
+        }
+        /* 檔案輸入的自訂樣式 (讓它更像一個按鈕) */
+        .custom-file-input {
+            position: relative;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -12,57 +22,57 @@
     <!-- 登入畫面 -->
     <div id="login-view" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-xl shadow-lg">
         <h2 class="text-2xl font-bold mb-6 text-center">Signage 系統登入</h2>
-        <input type="email" id="login-email" placeholder="電郵" class="w-full border p-2 mb-4 rounded">
-        <input type="password" id="login-pwd" placeholder="密碼" class="w-full border p-2 mb-4 rounded">
-        <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">登入</button>
+        <input type="email" id="login-email" placeholder="電郵" class="w-full border p-3 mb-4 rounded text-base">
+        <input type="password" id="login-pwd" placeholder="密碼" class="w-full border p-3 mb-4 rounded text-base">
+        <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 text-base font-medium">登入</button>
     </div>
 
     <!-- 主畫面 -->
     <div id="main-view" class="hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-blue-800">網上記錄 Signage 系統</h1>
-            <button onclick="handleLogout()" class="text-red-500 underline">登出</button>
+            <h1 class="text-xl md:text-2xl font-bold text-blue-800">網上記錄 Signage</h1>
+            <button onclick="handleLogout()" class="text-red-500 underline text-base p-2">登出</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- 左側：新增/編輯表單 -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="font-bold mb-4 border-b pb-2" id="form-title">新增 Signage</h2>
-                <div class="space-y-3">
-                    <input type="text" id="zh-name" placeholder="中文名稱" class="w-full border p-2 rounded">
-                    <input type="text" id="en-name" placeholder="英文名稱" class="w-full border p-2 rounded">
+            <!-- 左側：新增/編輯表單 (手機上佔滿) -->
+            <div class="bg-white p-5 rounded-lg shadow">
+                <h2 class="font-bold mb-4 border-b pb-2 text-lg" id="form-title">新增 Signage</h2>
+                <div class="space-y-4">
+                    <input type="text" id="zh-name" placeholder="中文名稱" class="w-full border p-3 rounded text-base">
+                    <input type="text" id="en-name" placeholder="英文名稱" class="w-full border p-3 rounded text-base">
                     
-                    <label class="block text-sm">尺寸</label>
-                    <select id="size" class="w-full border p-2 rounded">
+                    <label class="block text-sm font-medium text-gray-700">尺寸</label>
+                    <select id="size" class="w-full border p-3 rounded text-base bg-white">
                         <option>A5</option><option>A4</option><option>A3</option><option>A1</option><option>GIP</option>
                     </select>
 
-                    <label class="block text-sm">儲存地點</label>
-                    <select id="location" class="w-full border p-2 rounded">
+                    <label class="block text-sm font-medium text-gray-700">儲存地點</label>
+                    <select id="location" class="w-full border p-3 rounded text-base bg-white">
                         <option>Shelf 1</option><option>Shelf 2</option><option>Shelf 3</option>
                         <option>Shelf 4</option><option>Shelf 5</option><option>Shelf 6</option><option>Shelf 7</option>
                     </select>
 
-                    <label class="block text-sm">材質</label>
-                    <select id="material" class="w-full border p-2 rounded">
+                    <label class="block text-sm font-medium text-gray-700">材質</label>
+                    <select id="material" class="w-full border p-3 rounded text-base bg-white">
                         <option>Acrylic Board</option><option>Sheet</option><option>Magnetic</option><option>Sticker</option>
                     </select>
 
-                    <!-- 數量輸入 (新增) -->
-                    <label class="block text-sm">數量</label>
-                    <input type="number" id="quantity" min="1" value="1" class="w-full border p-2 rounded">
+                    <!-- 數量輸入 -->
+                    <label class="block text-sm font-medium text-gray-700">數量</label>
+                    <input type="number" id="quantity" min="1" value="1" class="w-full border p-3 rounded text-base">
 
-                    <!-- PDF 上傳 (選填) -->
-                    <label class="block text-sm">上傳 PDF (選填，留空則保留原有)</label>
-                    <input type="file" id="pdf-file" accept=".pdf,application/pdf" class="w-full text-sm">
+                    <!-- PDF 上傳 -->
+                    <label class="block text-sm font-medium text-gray-700">上傳 PDF (選填，留空則保留原有)</label>
+                    <input type="file" id="pdf-file" accept=".pdf,application/pdf" class="w-full text-sm border p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
 
-                    <!-- 圖片上傳 (選填，將自動壓縮) -->
-                    <label class="block text-sm">上傳圖片 (JPG/PNG, 選填，將自動壓縮)</label>
-                    <input type="file" id="image-file" accept="image/jpeg,image/png,image/jpg" class="w-full text-sm">
+                    <!-- 圖片上傳 - 加上 capture 屬性，手機可直接拍照 -->
+                    <label class="block text-sm font-medium text-gray-700">📷 上傳圖片 (拍照或選擇，JPG/PNG，自動壓縮)</label>
+                    <input type="file" id="image-file" accept="image/jpeg,image/png,image/jpg" capture="environment" class="w-full text-sm border p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                     
-                    <div class="flex gap-2">
-                        <button onclick="handleFormSubmit()" id="btn-submit" class="flex-1 bg-green-600 text-white p-2 rounded mt-4">確認儲存</button>
-                        <button onclick="cancelEdit()" id="btn-cancel" class="flex-1 bg-gray-400 text-white p-2 rounded mt-4 hidden">取消編輯</button>
+                    <div class="flex gap-3 mt-4">
+                        <button onclick="handleFormSubmit()" id="btn-submit" class="flex-1 bg-green-600 text-white p-3 rounded-lg text-base font-medium hover:bg-green-700 active:bg-green-800">確認儲存</button>
+                        <button onclick="cancelEdit()" id="btn-cancel" class="flex-1 bg-gray-400 text-white p-3 rounded-lg text-base font-medium hover:bg-gray-500 hidden">取消編輯</button>
                     </div>
                 </div>
             </div>
@@ -70,7 +80,7 @@
             <!-- 右側：列表與搜尋 -->
             <div class="lg:col-span-2">
                 <div class="bg-white p-4 rounded-lg shadow mb-4">
-                    <input type="text" id="search-input" oninput="renderList()" placeholder="🔍 全文字搜尋 (名稱或編號...)" class="w-full border-2 border-blue-100 p-3 rounded-lg focus:border-blue-500 outline-none">
+                    <input type="text" id="search-input" oninput="renderList()" placeholder="🔍 搜尋名稱或編號..." class="w-full border-2 border-blue-100 p-3 rounded-lg text-base focus:border-blue-500 outline-none">
                 </div>
                 <div id="signage-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- 動態產生的記錄卡片 -->
@@ -222,7 +232,7 @@
         const size = document.getElementById('size').value;
         const location = document.getElementById('location').value;
         const material = document.getElementById('material').value;
-        const quantity = parseInt(document.getElementById('quantity').value, 10) || 1; // 取得數量，預設1
+        const quantity = parseInt(document.getElementById('quantity').value, 10) || 1;
         const pdfInput = document.getElementById('pdf-file');
         const imgInput = document.getElementById('image-file');
 
@@ -250,7 +260,7 @@
                 pdfSize = allSignages.find(s => s.id === editingId)?.pdf_size || null;
             }
 
-            // 處理圖片
+            // 處理圖片 (自動壓縮已在uploadFileIfSelected中處理)
             if (imgInput.files.length > 0) {
                 imageUrl = await uploadFileIfSelected(imgInput, 'images', true);
                 if (editingId && originalImageUrl) {
@@ -266,18 +276,16 @@
                 size,
                 location,
                 material,
-                quantity,                 // 新增數量
+                quantity,
                 pdf_url: pdfUrl,
                 image_url: imageUrl,
                 pdf_size: pdfSize,
             };
 
             if (editingId) {
-                // 更新
                 await supabase.from('signages').update(baseData).eq('id', editingId);
                 alert('更新成功！');
             } else {
-                // 新增
                 const newRecord = {
                     ...baseData,
                     signage_id: 'SIG-' + Math.floor(Math.random() * 10000),
@@ -306,7 +314,7 @@
         document.getElementById('size').value = record.size || 'A5';
         document.getElementById('location').value = record.location || 'Shelf 1';
         document.getElementById('material').value = record.material || 'Acrylic Board';
-        document.getElementById('quantity').value = record.quantity || 1;  // 載入數量
+        document.getElementById('quantity').value = record.quantity || 1;
 
         document.getElementById('pdf-file').value = '';
         document.getElementById('image-file').value = '';
@@ -330,7 +338,7 @@
         document.getElementById('size').value = 'A5';
         document.getElementById('location').value = 'Shelf 1';
         document.getElementById('material').value = 'Acrylic Board';
-        document.getElementById('quantity').value = 1;  // 重置數量
+        document.getElementById('quantity').value = 1;
         document.getElementById('pdf-file').value = '';
         document.getElementById('image-file').value = '';
 
@@ -369,7 +377,7 @@
         }
     }
 
-    // ---------- 渲染列表 (含數量顯示) ----------
+    // ---------- 渲染列表 (含數量顯示，手機卡片優化) ----------
     window.renderList = () => {
         const term = document.getElementById('search-input').value.toLowerCase();
         const container = document.getElementById('signage-list');
@@ -384,29 +392,28 @@
             <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 relative">
                 <div class="flex justify-between items-start">
                     <span class="bg-gray-200 text-xs px-2 py-1 rounded font-mono">${s.signage_id || ''}</span>
-                    <div class="flex gap-2">
-                        <button onclick='startEdit(${JSON.stringify(s).replace(/'/g, "\\'")})' class="text-blue-500 hover:text-blue-700 text-sm">✏️ 編輯</button>
-                        <button onclick="deleteRecord('${s.id}', '${s.pdf_url || ''}', '${s.image_url || ''}')" class="text-red-500 hover:text-red-700 text-sm">🗑️ 刪除</button>
+                    <div class="flex gap-3">
+                        <button onclick='startEdit(${JSON.stringify(s).replace(/'/g, "\\'")})' class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1"><span>✏️</span>編輯</button>
+                        <button onclick="deleteRecord('${s.id}', '${s.pdf_url || ''}', '${s.image_url || ''}')" class="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 p-1"><span>🗑️</span>刪除</button>
                     </div>
                 </div>
                 ${s.image_url 
                     ? `<img src="${s.image_url}" alt="signage" class="w-full h-32 object-cover rounded mt-2 mb-2">`
-                    : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">無圖片</div>`}
-                <h3 class="font-bold mt-2">${s.zh_name || ''}</h3>
+                    : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">📷 無圖片</div>`}
+                <h3 class="font-bold mt-2 text-base">${s.zh_name || ''}</h3>
                 <p class="text-sm text-gray-600">${s.en_name || ''}</p>
                 <div class="mt-3 text-xs grid grid-cols-2 gap-1 text-gray-500">
                     <span>尺寸: ${s.size || ''}</span>
                     <span>地點: ${s.location || ''}</span>
                     <span class="col-span-2">材質: ${s.material || ''}</span>
-                    <!-- 新增數量顯示 -->
                     <span class="col-span-2">數量: ${s.quantity || 1}</span>
                 </div>
                 ${s.pdf_url 
                     ? `<div class="flex justify-between items-center mt-4">
-                        <a href="${s.pdf_url}" target="_blank" class="bg-blue-50 text-blue-600 py-1 px-2 rounded hover:bg-blue-100 text-sm">下載 PDF</a>
+                        <a href="${s.pdf_url}" target="_blank" class="bg-blue-50 text-blue-600 py-2 px-3 rounded hover:bg-blue-100 text-sm flex items-center gap-1"><span>📄</span>下載 PDF</a>
                         <span class="text-xs text-gray-500">${s.pdf_size ? formatFileSize(s.pdf_size) : ''}</span>
                        </div>`
-                    : `<div class="text-center mt-4 text-gray-400">無 PDF</div>`}
+                    : `<div class="text-center mt-4 text-gray-400 text-sm">無 PDF</div>`}
             </div>
         `).join('');
     };
