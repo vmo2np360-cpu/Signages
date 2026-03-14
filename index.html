@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signage 記錄系統 (可編輯、選填檔案)</title>
+    <title>Signage 記錄系統 (含數量)</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -48,6 +48,10 @@
                         <option>Acrylic Board</option><option>Sheet</option><option>Magnetic</option><option>Sticker</option>
                     </select>
 
+                    <!-- 數量輸入 (新增) -->
+                    <label class="block text-sm">數量</label>
+                    <input type="number" id="quantity" min="1" value="1" class="w-full border p-2 rounded">
+
                     <!-- PDF 上傳 (選填) -->
                     <label class="block text-sm">上傳 PDF (選填，留空則保留原有)</label>
                     <input type="file" id="pdf-file" accept=".pdf,application/pdf" class="w-full text-sm">
@@ -85,9 +89,9 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let allSignages = [];
-    let editingId = null;           // 當前正在編輯的記錄ID
-    let originalPdfUrl = null;      // 編輯前原有的PDF URL
-    let originalImageUrl = null;    // 編輯前原有的圖片URL
+    let editingId = null;
+    let originalPdfUrl = null;
+    let originalImageUrl = null;
 
     // ---------- 認證處理 ----------
     window.handleLogin = async () => {
@@ -198,7 +202,6 @@
 
         let fileToUpload = file;
         if (isImage) {
-            // 壓縮圖片
             const compressedBlob = await compressImage(file);
             const fileName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
             fileToUpload = new File([compressedBlob], fileName, { type: 'image/jpeg' });
@@ -211,19 +214,7 @@
         return urlData.publicUrl;
     }
 
-    // ---------- 新增記錄 ----------
-    async function createRecord(data) {
-        const { error } = await supabase.from('signages').insert([data]);
-        if (error) throw error;
-    }
-
-    // ---------- 更新記錄 ----------
-    async function updateRecord(id, updates) {
-        const { error } = await supabase.from('signages').update(updates).eq('id', id);
-        if (error) throw error;
-    }
-
-    // ---------- 表單提交（新增/編輯）----------
+    // ---------- 表單提交（新增/編輯，含數量）----------
     window.handleFormSubmit = async () => {
         const btn = document.getElementById('btn-submit');
         const zhName = document.getElementById('zh-name').value.trim();
@@ -231,10 +222,10 @@
         const size = document.getElementById('size').value;
         const location = document.getElementById('location').value;
         const material = document.getElementById('material').value;
+        const quantity = parseInt(document.getElementById('quantity').value, 10) || 1; // 取得數量，預設1
         const pdfInput = document.getElementById('pdf-file');
         const imgInput = document.getElementById('image-file');
 
-        // 基本驗證：名稱至少一個不為空？
         if (!zhName && !enName) {
             alert('請至少填寫中文或英文名稱');
             return;
@@ -247,21 +238,19 @@
             let pdfUrl = null, imageUrl = null;
             let pdfSize = null;
 
-            // 處理PDF檔案
+            // 處理PDF
             if (pdfInput.files.length > 0) {
                 pdfUrl = await uploadFileIfSelected(pdfInput, 'pdfs', false);
                 pdfSize = pdfInput.files[0].size;
-                // 若為編輯且原有PDF存在，刪除舊檔
                 if (editingId && originalPdfUrl) {
                     await deleteStorageFile(originalPdfUrl);
                 }
             } else if (editingId && originalPdfUrl) {
-                // 編輯且未選新檔，保留原有
                 pdfUrl = originalPdfUrl;
                 pdfSize = allSignages.find(s => s.id === editingId)?.pdf_size || null;
             }
 
-            // 處理圖片檔案
+            // 處理圖片
             if (imgInput.files.length > 0) {
                 imageUrl = await uploadFileIfSelected(imgInput, 'images', true);
                 if (editingId && originalImageUrl) {
@@ -277,6 +266,7 @@
                 size,
                 location,
                 material,
+                quantity,                 // 新增數量
                 pdf_url: pdfUrl,
                 image_url: imageUrl,
                 pdf_size: pdfSize,
@@ -284,7 +274,7 @@
 
             if (editingId) {
                 // 更新
-                await updateRecord(editingId, baseData);
+                await supabase.from('signages').update(baseData).eq('id', editingId);
                 alert('更新成功！');
             } else {
                 // 新增
@@ -293,11 +283,10 @@
                     signage_id: 'SIG-' + Math.floor(Math.random() * 10000),
                     created_at: new Date()
                 };
-                await createRecord(newRecord);
+                await supabase.from('signages').insert([newRecord]);
                 alert('儲存完成！');
             }
 
-            // 清空表單並返回新增模式
             cancelEdit();
             document.getElementById('pdf-file').value = '';
             document.getElementById('image-file').value = '';
@@ -312,23 +301,20 @@
 
     // ---------- 開始編輯 ----------
     window.startEdit = (record) => {
-        // 填充表單
         document.getElementById('zh-name').value = record.zh_name || '';
         document.getElementById('en-name').value = record.en_name || '';
         document.getElementById('size').value = record.size || 'A5';
         document.getElementById('location').value = record.location || 'Shelf 1';
         document.getElementById('material').value = record.material || 'Acrylic Board';
+        document.getElementById('quantity').value = record.quantity || 1;  // 載入數量
 
-        // 清空檔案輸入（避免誤留舊檔案）
         document.getElementById('pdf-file').value = '';
         document.getElementById('image-file').value = '';
 
-        // 儲存當前編輯資訊
         editingId = record.id;
         originalPdfUrl = record.pdf_url;
         originalImageUrl = record.image_url;
 
-        // 切換按鈕狀態
         document.getElementById('form-title').innerText = '編輯 Signage';
         document.getElementById('btn-submit').innerText = '更新記錄';
         document.getElementById('btn-cancel').classList.remove('hidden');
@@ -344,6 +330,7 @@
         document.getElementById('size').value = 'A5';
         document.getElementById('location').value = 'Shelf 1';
         document.getElementById('material').value = 'Acrylic Board';
+        document.getElementById('quantity').value = 1;  // 重置數量
         document.getElementById('pdf-file').value = '';
         document.getElementById('image-file').value = '';
 
@@ -361,7 +348,7 @@
             const { error } = await supabase.from('signages').delete().eq('id', id);
             if (error) throw error;
             alert('刪除成功');
-            if (editingId === id) cancelEdit(); // 若刪除的是正在編輯的記錄，取消編輯
+            if (editingId === id) cancelEdit();
             await loadData();
         } catch (e) {
             alert('刪除失敗：' + e.message);
@@ -382,7 +369,7 @@
         }
     }
 
-    // ---------- 渲染列表 ----------
+    // ---------- 渲染列表 (含數量顯示) ----------
     window.renderList = () => {
         const term = document.getElementById('search-input').value.toLowerCase();
         const container = document.getElementById('signage-list');
@@ -411,6 +398,8 @@
                     <span>尺寸: ${s.size || ''}</span>
                     <span>地點: ${s.location || ''}</span>
                     <span class="col-span-2">材質: ${s.material || ''}</span>
+                    <!-- 新增數量顯示 -->
+                    <span class="col-span-2">數量: ${s.quantity || 1}</span>
                 </div>
                 ${s.pdf_url 
                     ? `<div class="flex justify-between items-center mt-4">
