@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Signage 記錄系統 (含數量) 手機版</title>
+    <title>Signage 記錄系統 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 讓按鈕和輸入框更容易點擊 */
@@ -49,13 +49,19 @@
 
                     <label class="block text-sm font-medium text-gray-700">儲存地點</label>
                     <select id="location" class="w-full border p-3 rounded text-base bg-white">
+                        <!-- 原有 Shelf 1~7 -->
                         <option>Shelf 1</option><option>Shelf 2</option><option>Shelf 3</option>
                         <option>Shelf 4</option><option>Shelf 5</option><option>Shelf 6</option><option>Shelf 7</option>
+                        <!-- 新增 -->
+                        <option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option><option>P6</option><option>P7</option>
+                        <option>Shelf 8</option><option>Shelf 9</option><option>Table</option>
                     </select>
 
                     <label class="block text-sm font-medium text-gray-700">材質</label>
                     <select id="material" class="w-full border p-3 rounded text-base bg-white">
                         <option>Acrylic Board</option><option>Sheet</option><option>Magnetic</option><option>Sticker</option>
+                        <!-- 新增 -->
+                        <option>Poster</option><option>Flag</option>
                     </select>
 
                     <!-- 數量輸入 -->
