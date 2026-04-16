@@ -6,13 +6,20 @@
     <title>Signage 記錄系統 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 讓按鈕和輸入框更容易點擊 */
         button, input[type="file"]::file-selector-button {
             cursor: pointer;
         }
-        /* 檔案輸入的自訂樣式 (讓它更像一個按鈕) */
-        .custom-file-input {
-            position: relative;
+        /* 自訂滾動條，提升體驗 */
+        #signage-list {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        /* 手機上讓卡片按鈕更好點 */
+        @media (max-width: 640px) {
+            .card-actions button {
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
@@ -60,7 +67,6 @@
                     <label class="block text-sm font-medium text-gray-700">材質</label>
                     <select id="material" class="w-full border p-3 rounded text-base bg-white">
                         <option>Acrylic Board</option><option>Sheet</option><option>Magnetic</option><option>Sticker</option>
-                        <!-- 新增 -->
                         <option>Poster</option><option>Flag</option>
                     </select>
 
@@ -83,10 +89,24 @@
                 </div>
             </div>
 
-            <!-- 右側：列表與搜尋 -->
+            <!-- 右側：列表與搜尋 (加入地點篩選功能) -->
             <div class="lg:col-span-2">
                 <div class="bg-white p-4 rounded-lg shadow mb-4">
+                    <!-- 原本的名稱/編號搜尋 -->
                     <input type="text" id="search-input" oninput="renderList()" placeholder="🔍 搜尋名稱或編號..." class="w-full border-2 border-blue-100 p-3 rounded-lg text-base focus:border-blue-500 outline-none">
+                    
+                    <!-- 新增：儲存地點篩選欄位 (手機友善) -->
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <div class="flex-1 min-w-[150px]">
+                            <label class="block text-xs text-gray-500 mb-1">📍 篩選地點</label>
+                            <select id="location-filter" class="w-full border border-gray-300 p-2.5 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">📌 所有地點</option>
+                            </select>
+                        </div>
+                        <button id="clear-location-filter" class="mt-5 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition">清除篩選</button>
+                    </div>
+                    <!-- 即時顯示篩選結果數量 -->
+                    <div id="filter-stats" class="text-xs text-gray-500 mt-2 text-right"></div>
                 </div>
                 <div id="signage-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- 動態產生的記錄卡片 -->
@@ -122,6 +142,8 @@
         allSignages = [];
         renderList();
         cancelEdit();
+        // 重置地點篩選下拉選單 (清空後只剩預設選項)
+        populateLocationFilter();
     };
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -133,6 +155,7 @@
             allSignages = [];
             renderList();
             cancelEdit();
+            populateLocationFilter(); // 登出時重置地點篩選列表
         }
     });
 
@@ -369,7 +392,123 @@
         }
     };
 
-    // ---------- 載入資料 ----------
+    // ========== 新增：動態填充地點篩選下拉選單 (從現有資料提取所有不重複地點) ==========
+    function populateLocationFilter() {
+        const filterSelect = document.getElementById('location-filter');
+        if (!filterSelect) return;
+        
+        // 保留當前選中的值
+        const currentSelected = filterSelect.value;
+        
+        // 從 allSignages 提取所有不重複的 location (排除 null / undefined / 空字串)
+        const uniqueLocations = [...new Set(allSignages.map(s => s.location).filter(loc => loc && loc.trim() !== ""))];
+        // 排序 (數字+字母排序更直觀)
+        uniqueLocations.sort((a, b) => a.localeCompare(b, 'zh'));
+        
+        // 重建 options
+        filterSelect.innerHTML = '<option value="">📌 所有地點</option>';
+        uniqueLocations.forEach(loc => {
+            const option = document.createElement('option');
+            option.value = loc;
+            option.textContent = loc;
+            filterSelect.appendChild(option);
+        });
+        
+        // 嘗試恢復之前選中的值 (若該值依然存在於新選項中)
+        if (currentSelected && uniqueLocations.includes(currentSelected)) {
+            filterSelect.value = currentSelected;
+        } else {
+            filterSelect.value = ""; // 若之前選中的地點已不存在，重置為「所有地點」
+        }
+    }
+
+    // ---------- 核心篩選與渲染 (整合名稱搜尋 + 地點篩選) ----------
+    window.renderList = () => {
+        const term = document.getElementById('search-input').value.toLowerCase();
+        const locationFilter = document.getElementById('location-filter')?.value || "";
+        const container = document.getElementById('signage-list');
+        const statsDiv = document.getElementById('filter-stats');
+        
+        // 第一步：根據名稱/編號過濾
+        let filtered = allSignages.filter(s =>
+            (s.zh_name && s.zh_name.toLowerCase().includes(term)) ||
+            (s.en_name && s.en_name.toLowerCase().includes(term)) ||
+            (s.signage_id && s.signage_id.toLowerCase().includes(term))
+        );
+        
+        // 第二步：根據地點過濾 (若地點篩選不為空)
+        if (locationFilter !== "") {
+            filtered = filtered.filter(s => s.location === locationFilter);
+        }
+        
+        // 更新統計資訊
+        const totalCount = filtered.length;
+        statsDiv.innerHTML = `📊 共 ${totalCount} 筆記錄 ${locationFilter ? `(地點: ${locationFilter})` : '(全部分類)'}`;
+        
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="col-span-full bg-white p-8 rounded shadow text-center text-gray-500">✨ 找不到符合條件的 Signage 記錄，試試其他關鍵字或地點 ✨</div>`;
+            return;
+        }
+        
+        // 渲染卡片
+        container.innerHTML = filtered.map(s => `
+            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 relative transition hover:shadow-md">
+                <div class="flex justify-between items-start card-actions">
+                    <span class="bg-gray-200 text-xs px-2 py-1 rounded font-mono">${s.signage_id || ''}</span>
+                    <div class="flex gap-3">
+                        <button onclick='startEdit(${JSON.stringify(s).replace(/'/g, "\\'")})' class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1"><span>✏️</span>編輯</button>
+                        <button onclick="deleteRecord('${s.id}', '${s.pdf_url || ''}', '${s.image_url || ''}')" class="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 p-1"><span>🗑️</span>刪除</button>
+                    </div>
+                </div>
+                ${s.image_url 
+                    ? `<img src="${s.image_url}" alt="signage" class="w-full h-32 object-cover rounded mt-2 mb-2 bg-gray-100">`
+                    : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">📷 無圖片</div>`}
+                <h3 class="font-bold mt-2 text-base break-words">${escapeHtml(s.zh_name || '')}</h3>
+                <p class="text-sm text-gray-600 break-words">${escapeHtml(s.en_name || '')}</p>
+                <div class="mt-3 text-xs grid grid-cols-2 gap-1 text-gray-500">
+                    <span>📐 尺寸: ${s.size || ''}</span>
+                    <span>📍 地點: ${s.location || ''}</span>
+                    <span class="col-span-2">🧱 材質: ${s.material || ''}</span>
+                    <span class="col-span-2">🔢 數量: ${s.quantity || 1}</span>
+                </div>
+                ${s.pdf_url 
+                    ? `<div class="flex justify-between items-center mt-4">
+                        <a href="${s.pdf_url}" target="_blank" class="bg-blue-50 text-blue-600 py-2 px-3 rounded hover:bg-blue-100 text-sm flex items-center gap-1"><span>📄</span>下載 PDF</a>
+                        <span class="text-xs text-gray-500">${s.pdf_size ? formatFileSize(s.pdf_size) : ''}</span>
+                       </div>`
+                    : `<div class="text-center mt-4 text-gray-400 text-sm">📭 無 PDF</div>`}
+            </div>
+        `).join('');
+    };
+    
+    // 簡單防XSS輔助
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    // 地點篩選 change 事件觸發重新渲染
+    function onLocationFilterChange() {
+        renderList();
+    }
+    
+    // 清除地點篩選
+    function clearLocationFilter() {
+        const filterSelect = document.getElementById('location-filter');
+        if (filterSelect) {
+            filterSelect.value = "";
+            renderList();
+        }
+    }
+
+    // ---------- 載入資料 (每次增刪改後同步更新地點下拉選單) ----------
     async function loadData() {
         const { data, error } = await supabase
             .from('signages')
@@ -379,50 +518,54 @@
             console.error('載入資料失敗:', error);
         } else {
             allSignages = data || [];
+            // 更新地點篩選下拉選單 (保留原先選中的值邏輯)
+            populateLocationFilter();
             renderList();
         }
     }
-
-    // ---------- 渲染列表 (含數量顯示，手機卡片優化) ----------
-    window.renderList = () => {
-        const term = document.getElementById('search-input').value.toLowerCase();
-        const container = document.getElementById('signage-list');
-
-        const filtered = allSignages.filter(s =>
-            (s.zh_name && s.zh_name.toLowerCase().includes(term)) ||
-            (s.en_name && s.en_name.toLowerCase().includes(term)) ||
-            (s.signage_id && s.signage_id.toLowerCase().includes(term))
-        );
-
-        container.innerHTML = filtered.map(s => `
-            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 relative">
-                <div class="flex justify-between items-start">
-                    <span class="bg-gray-200 text-xs px-2 py-1 rounded font-mono">${s.signage_id || ''}</span>
-                    <div class="flex gap-3">
-                        <button onclick='startEdit(${JSON.stringify(s).replace(/'/g, "\\'")})' class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 p-1"><span>✏️</span>編輯</button>
-                        <button onclick="deleteRecord('${s.id}', '${s.pdf_url || ''}', '${s.image_url || ''}')" class="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 p-1"><span>🗑️</span>刪除</button>
-                    </div>
-                </div>
-                ${s.image_url 
-                    ? `<img src="${s.image_url}" alt="signage" class="w-full h-32 object-cover rounded mt-2 mb-2">`
-                    : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">📷 無圖片</div>`}
-                <h3 class="font-bold mt-2 text-base">${s.zh_name || ''}</h3>
-                <p class="text-sm text-gray-600">${s.en_name || ''}</p>
-                <div class="mt-3 text-xs grid grid-cols-2 gap-1 text-gray-500">
-                    <span>尺寸: ${s.size || ''}</span>
-                    <span>地點: ${s.location || ''}</span>
-                    <span class="col-span-2">材質: ${s.material || ''}</span>
-                    <span class="col-span-2">數量: ${s.quantity || 1}</span>
-                </div>
-                ${s.pdf_url 
-                    ? `<div class="flex justify-between items-center mt-4">
-                        <a href="${s.pdf_url}" target="_blank" class="bg-blue-50 text-blue-600 py-2 px-3 rounded hover:bg-blue-100 text-sm flex items-center gap-1"><span>📄</span>下載 PDF</a>
-                        <span class="text-xs text-gray-500">${s.pdf_size ? formatFileSize(s.pdf_size) : ''}</span>
-                       </div>`
-                    : `<div class="text-center mt-4 text-gray-400 text-sm">無 PDF</div>`}
-            </div>
-        `).join('');
-    };
+    
+    // ---------- 監聽器與初始化 (確保事件綁定) ----------
+    function bindFilterEvents() {
+        const locationSelect = document.getElementById('location-filter');
+        const clearBtn = document.getElementById('clear-location-filter');
+        if (locationSelect) {
+            // 移除舊監聽避免重複綁定 (但只會執行一次)
+            locationSelect.removeEventListener('change', onLocationFilterChange);
+            locationSelect.addEventListener('change', onLocationFilterChange);
+        }
+        if (clearBtn) {
+            clearBtn.removeEventListener('click', clearLocationFilter);
+            clearBtn.addEventListener('click', clearLocationFilter);
+        }
+    }
+    
+    // 在登入後或頁面加載完成綁定篩選器事件 (DOM 必定存在)
+    // 另外因為主視圖初始隱藏，但元素已經存在，可以先行綁定
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            bindFilterEvents();
+            // 確保下拉選單初始有一項預設值(雖然無資料)
+            populateLocationFilter();
+        });
+    } else {
+        bindFilterEvents();
+        populateLocationFilter();
+    }
+    
+    // 額外監聽: 當新增或更新導致地點選單改變後，希望保留原有選中邏輯已經在 populateLocationFilter 中實作
+    // 確保 search input 原本就綁定 oninput="renderList()" 已經存在, 無需更動。
+    // 為強化體驗，手動補上如果有動態載入的搜尋框仍可使用。
+    window.addEventListener('load', () => {
+        // 確保搜尋框存在且事件不會被覆蓋，原有 oninput 已經在 HTML 定義，不需要額外綁定
+        // 但為了防止未來更動，二次確保
+        const searchInput = document.getElementById('search-input');
+        if (searchInput && !searchInput.getAttribute('data-listener')) {
+            searchInput.setAttribute('data-listener', 'true');
+            searchInput.addEventListener('input', () => renderList());
+        }
+        bindFilterEvents();
+        populateLocationFilter();
+    });
 </script>
 </body>
 </html>
