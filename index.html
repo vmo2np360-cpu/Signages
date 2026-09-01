@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Signage 記錄系統 </title>
+    <title>Audit Room 物資記錄系統 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         button, input[type="file"]::file-selector-button {
@@ -37,14 +37,14 @@
     <!-- 主畫面 -->
     <div id="main-view" class="hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl md:text-2xl font-bold text-blue-800">網上記錄 Signage</h1>
+            <h1 class="text-xl md:text-2xl font-bold text-blue-800">Audit Room 物資記錄系統</h1>
             <button onclick="handleLogout()" class="text-red-500 underline text-base p-2">登出</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- 左側：新增/編輯表單 (手機上佔滿) -->
             <div class="bg-white p-5 rounded-lg shadow">
-                <h2 class="font-bold mb-4 border-b pb-2 text-lg" id="form-title">新增 Signage</h2>
+                <h2 class="font-bold mb-4 border-b pb-2 text-lg" id="form-title">新增物資</h2>
                 <div class="space-y-4">
                     <input type="text" id="zh-name" placeholder="中文名稱" class="w-full border p-3 rounded text-base">
                     <input type="text" id="en-name" placeholder="英文名稱" class="w-full border p-3 rounded text-base">
