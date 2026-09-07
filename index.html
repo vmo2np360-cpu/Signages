@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Audit Room 物資記錄系統 </title>
+    <title>Signage 記錄系統 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         button, input[type="file"]::file-selector-button {
@@ -37,14 +37,14 @@
     <!-- 主畫面 -->
     <div id="main-view" class="hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl md:text-2xl font-bold text-blue-800">Audit Room 物資記錄系統</h1>
+            <h1 class="text-xl md:text-2xl font-bold text-blue-800">網上記錄 Signage</h1>
             <button onclick="handleLogout()" class="text-red-500 underline text-base p-2">登出</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- 左側：新增/編輯表單 (手機上佔滿) -->
             <div class="bg-white p-5 rounded-lg shadow">
-                <h2 class="font-bold mb-4 border-b pb-2 text-lg" id="form-title">新增物資</h2>
+                <h2 class="font-bold mb-4 border-b pb-2 text-lg" id="form-title">新增 Signage</h2>
                 <div class="space-y-4">
                     <input type="text" id="zh-name" placeholder="中文名稱" class="w-full border p-3 rounded text-base">
                     <input type="text" id="en-name" placeholder="英文名稱" class="w-full border p-3 rounded text-base">
@@ -52,6 +52,7 @@
                     <label class="block text-sm font-medium text-gray-700">尺寸</label>
                     <select id="size" class="w-full border p-3 rounded text-base bg-white">
                         <option>A5</option><option>A4</option><option>A3</option><option>A1</option><option>GIP</option>
+                        <option>N/A</option>
                     </select>
 
                     <label class="block text-sm font-medium text-gray-700">儲存地點</label>
@@ -400,16 +401,28 @@
         const filterSelect = document.getElementById('location-filter');
         if (!filterSelect) return;
         const currentSelected = filterSelect.value;
-        const uniqueLocations = [...new Set(allSignages.map(s => s.location).filter(loc => loc && loc.trim() !== ""))];
-        uniqueLocations.sort((a, b) => a.localeCompare(b, 'zh'));
+
+        // 從表單中的地點下拉選單取得所有預設地點
+        const locationSelect = document.getElementById('location');
+        const presetOptions = Array.from(locationSelect.options).map(opt => opt.value);
+
+        // 從現有記錄中取得已使用的地點
+        const recordLocations = allSignages.map(s => s.location).filter(loc => loc && loc.trim() !== "");
+
+        // 合併並去重
+        const allLocations = [...new Set([...presetOptions, ...recordLocations])];
+        allLocations.sort((a, b) => a.localeCompare(b, 'zh'));
+
         filterSelect.innerHTML = '<option value="">📌 所有地點</option>';
-        uniqueLocations.forEach(loc => {
+        allLocations.forEach(loc => {
             const option = document.createElement('option');
             option.value = loc;
             option.textContent = loc;
             filterSelect.appendChild(option);
         });
-        if (currentSelected && uniqueLocations.includes(currentSelected)) {
+
+        // 還原先前選中的值（如果仍存在）
+        if (currentSelected && allLocations.includes(currentSelected)) {
             filterSelect.value = currentSelected;
         } else {
             filterSelect.value = "";
