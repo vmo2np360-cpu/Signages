@@ -21,6 +21,98 @@
                 padding: 8px 12px;
             }
         }
+        /* 圖片預覽 Modal 樣式 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow: auto;
+            animation: fadeIn 0.3s;
+        }
+        .image-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-modal img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.2);
+            animation: zoomIn 0.3s;
+        }
+        .image-modal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            background: none;
+            border: none;
+            z-index: 10000;
+        }
+        .image-modal .close-btn:hover {
+            color: #bbb;
+            transform: scale(1.2);
+        }
+        .image-modal .download-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 35px;
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 10000;
+        }
+        .image-modal .download-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.05);
+        }
+        .image-modal .image-info {
+            position: absolute;
+            bottom: 30px;
+            left: 35px;
+            color: #fff;
+            font-size: 14px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            max-width: 60%;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        /* 圖片卡片滑鼠指標 */
+        .clickable-image {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .clickable-image:hover {
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -57,13 +149,10 @@
 
                     <label class="block text-sm font-medium text-gray-700">儲存地點</label>
                     <select id="location" class="w-full border p-3 rounded text-base bg-white">
-                        <!-- 原有 Shelf 1~7 -->
                         <option>Shelf 1</option><option>Shelf 2</option><option>Shelf 3</option>
                         <option>Shelf 4</option><option>Shelf 5</option><option>Shelf 6</option><option>Shelf 7</option>
-                        <!-- 新增 -->
                         <option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option><option>P6</option><option>P7</option>
                         <option>Shelf 8</option><option>Shelf 9</option><option>Table</option>
-                        <!-- 新增 Audit Room -->
                         <option>Audit Room</option>
                     </select>
 
@@ -71,19 +160,15 @@
                     <select id="material" class="w-full border p-3 rounded text-base bg-white">
                         <option>Acrylic Board</option><option>Sheet</option><option>Magnetic</option><option>Sticker</option>
                         <option>Poster</option><option>Flag</option>
-                        <!-- 新增 設備 -->
                         <option>設備</option>
                     </select>
 
-                    <!-- 數量輸入 -->
                     <label class="block text-sm font-medium text-gray-700">數量</label>
                     <input type="number" id="quantity" min="1" value="1" class="w-full border p-3 rounded text-base">
 
-                    <!-- PDF 上傳 -->
                     <label class="block text-sm font-medium text-gray-700">上傳 PDF (選填，留空則保留原有)</label>
                     <input type="file" id="pdf-file" accept=".pdf,application/pdf" class="w-full text-sm border p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
 
-                    <!-- 圖片上傳 - 加上 capture 屬性，手機可直接拍照 -->
                     <label class="block text-sm font-medium text-gray-700">📷 上傳圖片 (拍照或選擇，JPG/PNG，自動壓縮)</label>
                     <input type="file" id="image-file" accept="image/jpeg,image/png,image/jpg" class="w-full text-sm border p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                     
@@ -94,13 +179,11 @@
                 </div>
             </div>
 
-            <!-- 右側：列表與搜尋 (加入地點篩選功能) -->
+            <!-- 右側：列表與搜尋 -->
             <div class="lg:col-span-2">
                 <div class="bg-white p-4 rounded-lg shadow mb-4">
-                    <!-- 原本的名稱/編號搜尋 -->
                     <input type="text" id="search-input" oninput="renderList()" placeholder="🔍 搜尋名稱或編號..." class="w-full border-2 border-blue-100 p-3 rounded-lg text-base focus:border-blue-500 outline-none">
                     
-                    <!-- 新增：儲存地點篩選欄位 (手機友善) -->
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                         <div class="flex-1 min-w-[150px]">
                             <label class="block text-xs text-gray-500 mb-1">📍 篩選地點</label>
@@ -109,10 +192,8 @@
                             </select>
                         </div>
                         <button id="clear-location-filter" class="mt-5 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition">清除篩選</button>
-                        <!-- 新增：匯出 CSV 按鈕 -->
                         <button onclick="exportCSV()" class="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">📥 匯出CSV</button>
                     </div>
-                    <!-- 即時顯示篩選結果數量 -->
                     <div id="filter-stats" class="text-xs text-gray-500 mt-2 text-right"></div>
                 </div>
                 <div id="signage-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -121,6 +202,14 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- 圖片預覽 Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal(event)">
+    <button class="close-btn" onclick="closeImageModal()">&times;</button>
+    <img id="modalImage" src="" alt="預覽圖片">
+    <div class="image-info" id="modalImageInfo"></div>
+    <a id="modalDownloadBtn" class="download-btn" href="#" download="signage_image.jpg">📥 下載圖片</a>
 </div>
 
 <!-- Supabase SDK -->
@@ -135,6 +224,39 @@
     let editingId = null;
     let originalPdfUrl = null;
     let originalImageUrl = null;
+
+    // ---------- 圖片預覽功能 (全域) ----------
+    window.openImagePreview = function(imageUrl, title = '') {
+        if (!imageUrl) return;
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const info = document.getElementById('modalImageInfo');
+        const downloadBtn = document.getElementById('modalDownloadBtn');
+        
+        modalImg.src = imageUrl;
+        info.textContent = title || '圖片預覽';
+        downloadBtn.href = imageUrl;
+        // 從URL提取檔名
+        const fileName = imageUrl.split('/').pop() || 'signage_image.jpg';
+        downloadBtn.download = fileName;
+        
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeImageModal = function(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    };
+
+    // 鍵盤 ESC 關閉
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
 
     // ---------- 認證處理 ----------
     window.handleLogin = async () => {
@@ -240,7 +362,7 @@
         }
     }
 
-    // ---------- 上傳檔案（若無檔案則返回null）----------
+    // ---------- 上傳檔案 ----------
     async function uploadFileIfSelected(fileInput, folder, isImage = false) {
         const file = fileInput.files[0];
         if (!file) return null;
@@ -259,7 +381,7 @@
         return urlData.publicUrl;
     }
 
-    // ---------- 表單提交（新增/編輯，含數量）----------
+    // ---------- 表單提交 ----------
     window.handleFormSubmit = async () => {
         const btn = document.getElementById('btn-submit');
         const zhName = document.getElementById('zh-name').value.trim();
@@ -396,20 +518,15 @@
         }
     };
 
-    // ========== 動態填充地點篩選下拉選單 ==========
+    // ---------- 動態填充地點篩選 ----------
     function populateLocationFilter() {
         const filterSelect = document.getElementById('location-filter');
         if (!filterSelect) return;
         const currentSelected = filterSelect.value;
 
-        // 從表單中的地點下拉選單取得所有預設地點
         const locationSelect = document.getElementById('location');
         const presetOptions = Array.from(locationSelect.options).map(opt => opt.value);
-
-        // 從現有記錄中取得已使用的地點
         const recordLocations = allSignages.map(s => s.location).filter(loc => loc && loc.trim() !== "");
-
-        // 合併並去重
         const allLocations = [...new Set([...presetOptions, ...recordLocations])];
         allLocations.sort((a, b) => a.localeCompare(b, 'zh'));
 
@@ -421,7 +538,6 @@
             filterSelect.appendChild(option);
         });
 
-        // 還原先前選中的值（如果仍存在）
         if (currentSelected && allLocations.includes(currentSelected)) {
             filterSelect.value = currentSelected;
         } else {
@@ -429,7 +545,7 @@
         }
     }
 
-    // ---------- 取得當前篩選後的資料 (供匯出及渲染共用) ----------
+    // ---------- 取得篩選資料 ----------
     function getFilteredData() {
         const term = document.getElementById('search-input').value.toLowerCase();
         const locationFilter = document.getElementById('location-filter')?.value || "";
@@ -451,7 +567,6 @@
             alert('沒有資料可匯出');
             return;
         }
-        // 定義標題列 (中文)
         const headers = ['編號', '中文名稱', '英文名稱', '尺寸', '地點', '材質', '數量', 'PDF連結', '圖片連結', '建立時間'];
         const rows = data.map(item => [
             item.signage_id || '',
@@ -470,7 +585,6 @@
             const escapedRow = row.map(cell => {
                 if (cell === null || cell === undefined) return '""';
                 const str = String(cell);
-                // 若包含逗號、雙引號或換行，則用雙引號包裹並內嵌雙引號轉義
                 if (str.includes(',') || str.includes('"') || str.includes('\n')) {
                     return '"' + str.replace(/"/g, '""') + '"';
                 }
@@ -478,7 +592,6 @@
             });
             csvContent += escapedRow.join(',') + '\n';
         });
-        // 加入 BOM 以利 Excel 正確辨識 UTF-8
         const bom = '\uFEFF';
         const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -490,7 +603,7 @@
         URL.revokeObjectURL(link.href);
     };
 
-    // ---------- 核心渲染 (使用 getFilteredData) ----------
+    // ---------- 核心渲染 ----------
     window.renderList = () => {
         const filtered = getFilteredData();
         const container = document.getElementById('signage-list');
@@ -504,7 +617,12 @@
             return;
         }
 
-        container.innerHTML = filtered.map(s => `
+        container.innerHTML = filtered.map(s => {
+            const imageHtml = s.image_url 
+                ? `<img src="${s.image_url}" alt="${escapeHtml(s.zh_name || 'signage')}" class="w-full h-32 object-cover rounded mt-2 mb-2 bg-gray-100 clickable-image" onclick="openImagePreview('${s.image_url}', '${escapeHtml(s.zh_name || '')} ${escapeHtml(s.en_name || '')}')">`
+                : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">📷 無圖片</div>`;
+
+            return `
             <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 relative transition hover:shadow-md">
                 <div class="flex justify-between items-start card-actions">
                     <span class="bg-gray-200 text-xs px-2 py-1 rounded font-mono">${s.signage_id || ''}</span>
@@ -513,9 +631,7 @@
                         <button onclick="deleteRecord('${s.id}', '${s.pdf_url || ''}', '${s.image_url || ''}')" class="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 p-1"><span>🗑️</span>刪除</button>
                     </div>
                 </div>
-                ${s.image_url 
-                    ? `<img src="${s.image_url}" alt="signage" class="w-full h-32 object-cover rounded mt-2 mb-2 bg-gray-100">`
-                    : `<div class="w-full h-32 bg-gray-200 rounded mt-2 mb-2 flex items-center justify-center text-gray-500">📷 無圖片</div>`}
+                ${imageHtml}
                 <h3 class="font-bold mt-2 text-base break-words">${escapeHtml(s.zh_name || '')}</h3>
                 <p class="text-sm text-gray-600 break-words">${escapeHtml(s.en_name || '')}</p>
                 <div class="mt-3 text-xs grid grid-cols-2 gap-1 text-gray-500">
@@ -531,10 +647,10 @@
                        </div>`
                     : `<div class="text-center mt-4 text-gray-400 text-sm">📭 無 PDF</div>`}
             </div>
-        `).join('');
+        `}).join('');
     };
 
-    // 簡單防XSS輔助
+    // ---------- 防XSS輔助 ----------
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -542,17 +658,14 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
-    // 地點篩選 change 事件
+    // ---------- 地點篩選事件 ----------
     function onLocationFilterChange() {
         renderList();
     }
 
-    // 清除地點篩選
     function clearLocationFilter() {
         const filterSelect = document.getElementById('location-filter');
         if (filterSelect) {
@@ -576,7 +689,7 @@
         }
     }
 
-    // ---------- 綁定篩選器事件 ----------
+    // ---------- 綁定事件 ----------
     function bindFilterEvents() {
         const locationSelect = document.getElementById('location-filter');
         const clearBtn = document.getElementById('clear-location-filter');
@@ -590,7 +703,7 @@
         }
     }
 
-    // 初始化
+    // ---------- 初始化 ----------
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             bindFilterEvents();
